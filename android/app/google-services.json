@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "771829928128",
+    "project_id": "mad-homework02",
+    "storage_bucket": "mad-homework02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:771829928128:android:21107d565d4b7fd8945d25",
+        "android_client_info": {
+          "package_name": "com.example.hw02"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkPezWrx0gq6_z0dVOczKADSRzJkm28F8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
