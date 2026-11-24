@@ -5,11 +5,12 @@ class BoardService {
 
   /// CREATE — uid-owned, server-timestamped
   Future<void> postMessage({
+    required String messageId,
     required String authorUid,
     required String authorName,
     required String text,
   }) async {
-    await _db.collection('messages').add({
+    await _db.collection('messages').doc(messageId).set({
       'authorUid': authorUid,
       'authorName': authorName,
       'text': text,

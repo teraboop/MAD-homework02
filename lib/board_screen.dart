@@ -15,6 +15,8 @@ class _BoardScreenState extends State<BoardScreen> {
   final _boardService = BoardService();
   String _displayName = '';
   bool _isValid = false;
+  bool _posting = false;
+  String? _pendingMessageId;
 
   @override
   void initState() {
@@ -53,14 +55,19 @@ class _BoardScreenState extends State<BoardScreen> {
 
   Future<void> _submit() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _posting) return;
+    setState(() => _posting = true);
     final user = AuthService().currentUser!;
     try {
+      final messageId = DateTime.now().millisecondsSinceEpoch.toString();
+      _pendingMessageId = messageId;
       await _boardService.postMessage(
+        messageId: messageId,
         authorUid: user.uid,
         authorName: _displayName,
         text: text,
       );
+      _pendingMessageId = null;
       _controller.clear();
     } on Exception catch (_) {
       if (mounted) {
@@ -68,6 +75,8 @@ class _BoardScreenState extends State<BoardScreen> {
           const SnackBar(content: Text('Could not post message.')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _posting = false);
     }
   }
 
@@ -118,7 +127,10 @@ class _BoardScreenState extends State<BoardScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: _isValid ? _submit : null,
+                  onPressed: () {
+                  _submit();
+                  _submit();
+                },
                   child: const Text('Post'),
                 ),
               ],
