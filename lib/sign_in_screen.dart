@@ -29,18 +29,25 @@ class _SignInScreenState extends State<SignInScreen> {
     if (_busy || !_formKey.currentState!.validate()) return;
     setState(() { _busy = true; });
     try {
-      await _auth.signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      if (_isLogin) {
+        await _auth.signIn(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      } else {
+        await _auth.register(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      }
     } on FirebaseAuthException catch (error) {
       final message = error.code == 'network-request-failed'
           ? 'Check your connection and try again.'
-          : 'Sign-in failed. Check your details and sign-in setup.';
+          : _isLogin
+              ? 'Sign-in failed. Check your details and sign-in setup.'
+              : 'Registration failed. Check your details and try again.';
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
       if (mounted) setState(() { _busy = false; });

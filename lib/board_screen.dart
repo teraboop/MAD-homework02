@@ -13,13 +13,14 @@ class BoardScreen extends StatefulWidget {
 class _BoardScreenState extends State<BoardScreen> {
   final _controller = TextEditingController();
   final _boardService = BoardService();
-  String _displayName = ''; // TODO: load from users/{uid} profile doc
-  bool _isValid = false;    // drives whether the button is enabled
+  String _displayName = '';
+  bool _isValid = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+    _loadDisplayName();
   }
 
   @override
@@ -34,6 +35,20 @@ class _BoardScreenState extends State<BoardScreen> {
     if (isValid != _isValid) {
       setState(() => _isValid = isValid);
     }
+  }
+
+  Future<void> _loadDisplayName() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final data = doc.data();
+    if (data == null) return;
+    final firstName = data['firstName'] as String? ?? '';
+    final lastName = data['lastName'] as String? ?? '';
+    if (!mounted) return;
+    setState(() {
+      _displayName = '$firstName $lastName'.trim();
+    });
   }
 
   Future<void> _submit() async {
@@ -59,7 +74,16 @@ class _BoardScreenState extends State<BoardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Message Board')),
+      appBar: AppBar(
+        title: const Text('Message Board'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign out',
+            onPressed: () => AuthService().signOut(),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -137,7 +161,7 @@ class _MessageTile extends StatelessWidget {
                 ),
               ],
             )
-          : null, // not your message — no controls rendered at all
+          : null,
     );
   }
 
@@ -162,13 +186,30 @@ class _MessageTile extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete message?'),
+        content: const Text('This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     await _runGuarded(context, () => boardService.deleteMessage(messageId: doc.id));
   }
 
   Future<void> _runGuarded(BuildContext context, Future<void> Function() action) async {
     try {
       await action();
-      // no manual refresh needed — messageBoard() stream re-renders automatically
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
         ScaffoldMessenger.of(context).showSnackBar(
